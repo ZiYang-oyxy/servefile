@@ -703,15 +703,16 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 		if cleanFileName == "":
 			return ""
 		destFileName = os.path.join(self.targetDir, cleanFileName)
-		if not os.path.exists(destFileName):
-			return destFileName
-		else:
-			i = 1
-			extraDestFileName = destFileName + "(%s)" % i
-			while os.path.exists(extraDestFileName):
-				i += 1
-				extraDestFileName = destFileName + "(%s)" % i
-			return extraDestFileName
+		return destFileName
+#		if not os.path.exists(destFileName):
+#			return destFileName
+#		else:
+#			i = 1
+#			extraDestFileName = destFileName + "(%s)" % i
+#			while os.path.exists(extraDestFileName):
+#				i += 1
+#				extraDestFileName = destFileName + "(%s)" % i
+#			return extraDestFileName
 		# never reached
 
 class ThreadedHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):

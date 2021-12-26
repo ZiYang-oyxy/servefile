@@ -16,7 +16,7 @@ setup(
     url='https://github.com/sebageek/servefile/',
     author='Sebastian Lohff',
     author_email='seba@someserver.de',
-    install_requires=['pyopenssl'],
+    #install_requires=['pyopenssl'],
     tests_require=[
         'pathlib2; python_version<"3"',
         'pytest',
