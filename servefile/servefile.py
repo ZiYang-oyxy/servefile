@@ -418,7 +418,7 @@ class DirListingHandler(FileBaseHandler):
 		<tbody>
 		""" % {'path': os.path.normpath(unquote(self.path))}
 		footer = """</tbody></table></div>
-<div class="footer"><a href="http://seba-geek.de/stuff/servefile/">servefile %(version)s</a></div>
+<div class="footer"><a href="https://github.com/ZiYang-oyxy/servefile">servefile %(version)s</a> for AwesomeDevops</div>
 <script>
     function unhumanize(text){
         var powers = {'K': 1, 'M': 2, 'G': 3, 'T': 4};
@@ -569,21 +569,10 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 	targetDir = None
 	maxUploadSize = 0
 	blockSize = 1024 * 1024
-	uploadPage = """
-<!docype html>
-<html>
-	<form action="/" method="post" enctype="multipart/form-data">
-		<label for="file">Filename:</label>
-		<input type="file" name="file" id="file" />
-		<br />
-		<input type="submit" name="submit" value="Upload" />
-	</form>
-</html>
-"""
 
 	def do_GET(self):
 		""" Answer every GET request with the upload form """
-		self.sendResponse(200, self.uploadPage)
+		self.sendResponse(200, self.getUploadPage("", 200))
 
 	def do_POST(self):
 		""" Upload a file via POST
@@ -611,12 +600,12 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 		env['REQUEST_METHOD'] = "POST"
 		fstorage = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ=env)
 		if not "file" in fstorage:
-			self.sendResponse(400, "No file found in request.")
+			self.sendResponse(400, self.getUploadPage("No file found in request.", 400))
 			return
 
 		destFileName = self.getTargetName(fstorage["file"].filename)
 		if destFileName == "":
-			self.sendResponse(400, "Filename was empty or invalid")
+			self.sendResponse(400, self.getUploadPage("Filename was empty or invalid.", 400))
 			return
 
 		# write file down to disk, send a 200 afterwards
@@ -627,7 +616,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			target.write(fstorage["file"].file.read(bytesToRead))
 			bytesLeft -= bytesToRead
 		target.close()
-		self.sendResponse(200, "OK! Thanks for uploading")
+		self.sendResponse(200, self.getUploadPage("Upload completed.", 200))
 		print("Received file '%s' from %s." % (destFileName, self.client_address[0]))
 
 	def do_PUT(self, fromPost=False):
@@ -680,6 +669,183 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.sendResponse(413, "Your file was too big! Maximum allowed size is %d byte. <a href=\"/\">back</a>" % self.maxUploadSize)
 			return -1
 		return length
+
+	def getUploadPage(self, message, code):
+		color = "green"
+		if code == 400:
+			color = "red"
+		page = """
+<!docype html>
+<html>
+    <style>
+		.top {
+			position: absolute;
+			top: 45%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+        .lds-roller {
+		    display: inline-block;
+		    position: absolute;
+		    width: 50px;
+		    height: 50px;
+		    top: 50%;
+			right: 20%;
+			transform: translate(-50%, -50%);
+        }
+        .lds-roller div {
+          animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          transform-origin: 40px 40px;
+        }
+        .lds-roller div:after {
+          content: " ";
+          display: block;
+          position: absolute;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #3f8188;
+          margin: -4px 0 0 -4px;
+        }
+        .lds-roller div:nth-child(1) {
+          animation-delay: -0.036s;
+        }
+        .lds-roller div:nth-child(1):after {
+          top: 63px;
+          left: 63px;
+        }
+        .lds-roller div:nth-child(2) {
+          animation-delay: -0.072s;
+        }
+        .lds-roller div:nth-child(2):after {
+          top: 68px;
+          left: 56px;
+        }
+        .lds-roller div:nth-child(3) {
+          animation-delay: -0.108s;
+        }
+        .lds-roller div:nth-child(3):after {
+          top: 71px;
+          left: 48px;
+        }
+        .lds-roller div:nth-child(4) {
+          animation-delay: -0.144s;
+        }
+        .lds-roller div:nth-child(4):after {
+          top: 72px;
+          left: 40px;
+        }
+        .lds-roller div:nth-child(5) {
+          animation-delay: -0.18s;
+        }
+        .lds-roller div:nth-child(5):after {
+          top: 71px;
+          left: 32px;
+        }
+        .lds-roller div:nth-child(6) {
+          animation-delay: -0.216s;
+        }
+        .lds-roller div:nth-child(6):after {
+          top: 68px;
+          left: 24px;
+        }
+        .lds-roller div:nth-child(7) {
+          animation-delay: -0.252s;
+        }
+        .lds-roller div:nth-child(7):after {
+          top: 63px;
+          left: 17px;
+        }
+        .lds-roller div:nth-child(8) {
+          animation-delay: -0.288s;
+        }
+        .lds-roller div:nth-child(8):after {
+          top: 56px;
+          left: 12px;
+        }
+        .hide {
+            display: none;
+        }
+		.upload-container {
+			position: relative;
+		}
+		.upload-container input {
+			border: 1px solid #92b0b3;
+			background: #f1f1f1;
+			outline: 2px dashed #92b0b3;
+			outline-offset: -10px;
+			padding: 100px 230px 100px 250px;
+			text-align: center !important;
+		}
+
+		.upload-container input:hover {
+			background: #ddd;
+		}
+
+		.upload-container:before {
+			position: absolute;
+			bottom: 50px;
+			left: 230px;
+			content: " (or) Drag and Drop files here. ";
+			color: #3f8188;
+			font-weight: 900;
+		}
+
+		.upload-btn {
+			margin-left: 300px;
+			padding: 7px 20px;
+            cursor: pointer;
+            color: #ffffff;
+            border-color: #0274be;
+            background-color: #0274be;
+		}
+        .upload-btn.disable {
+            color: #ffffff;
+            background-color: #3a3a3a;
+            border-color: #3a3a3a;
+        }
+        @keyframes lds-roller {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+    </style>
+	<div class="top">
+		<div class="upload-container">
+			<form id="form" action="/" method="post" enctype="multipart/form-data">
+				<input class="select_file" type="file" name="file" id="file" />
+				<div class="lds-roller hide" id="loader"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+			</form>
+		</div>
+		<br>
+		<button id="submit" class="upload-btn" onclick="submit()">Submit</button>
+	<span id="tip" style="color:""" + color + """;">""" + message + """</span>
+	</div>
+    <script>
+        function submit() {
+            if (!window.submitted) {
+                window.submitted = true;
+                var form = document.getElementById("form");
+                var loader = document.getElementById("loader");
+                var button = document.getElementById("submit");
+                loader.setAttribute("class", "lds-roller");
+                button.setAttribute("class", "upload-btn disable");
+                form.submit();
+            }
+        }
+        window.onload = function() {
+			setTimeout(() => {
+				var tip = document.getElementById("tip");
+				tip.setAttribute("class", "hide");
+			}, 2000)
+		}
+    </script>
+</html>
+"""
+		return page
 
 	def sendResponse(self, code, msg):
 		""" Send a HTTP response with HTTP statuscode code and message msg,
