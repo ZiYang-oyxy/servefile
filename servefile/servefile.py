@@ -572,7 +572,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 
 	def do_GET(self):
 		""" Answer every GET request with the upload form """
-		self.sendResponse(200, self.getUploadPage("", 200))
+		self.sendResponse(200, self.getUploadPage(".", 200))
 
 	def do_POST(self):
 		""" Upload a file via POST
@@ -616,7 +616,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			target.write(fstorage["file"].file.read(bytesToRead))
 			bytesLeft -= bytesToRead
 		target.close()
-		self.sendResponse(200, self.getUploadPage("Upload completed.", 200))
+		self.sendResponse(200, self.getUploadPage("Upload completed: %s" % (fstorage["file"].filename), 200))
 		print("Received file '%s' from %s." % (destFileName, self.client_address[0]))
 
 	def do_PUT(self, fromPost=False):
@@ -786,7 +786,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			position: absolute;
 			bottom: 50px;
 			left: 230px;
-			content: " (or) Drag and Drop files here. ";
+			content: " (or) Drag and Drop one file here. ";
 			color: #3f8188;
 			font-weight: 900;
 		}
@@ -796,13 +796,12 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			padding: 7px 20px;
             cursor: pointer;
             color: #ffffff;
-            border-color: #0274be;
-            background-color: #0274be;
+            border-color: #ffffff;
+            background-color: #507E87;
 		}
         .upload-btn.disable {
-            color: #ffffff;
-            background-color: #3a3a3a;
-            border-color: #3a3a3a;
+            cursor: no-drop;
+            color: #CAC9CA;
         }
         @keyframes lds-roller {
           0% {
@@ -822,7 +821,9 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 		</div>
 		<br>
 		<button id="submit" class="upload-btn" onclick="submit()">Submit</button>
-	<span id="tip" style="color:""" + color + """;">""" + message + """</span>
+		<br>
+		<br>
+        <span id="tip" style="color:""" + color + """;">""" + message + """</span>
 	</div>
     <script>
         function submit() {
@@ -836,12 +837,6 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
                 form.submit();
             }
         }
-        window.onload = function() {
-			setTimeout(() => {
-				var tip = document.getElementById("tip");
-				tip.setAttribute("class", "hide");
-			}, 2000)
-		}
     </script>
 </html>
 """
