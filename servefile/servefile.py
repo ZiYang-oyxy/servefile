@@ -320,14 +320,15 @@ class DirListingHandler(FileBaseHandler):
 			self.end_headers()
 			return
 
-		if os.path.isdir(path):
-			if not self.path.endswith('/'):
-				self.send_response(301)
-				self.send_header("Location", self.path + '/')
-				self.end_headers()
-			else:
-				self.sendDirectoryListing(path, head)
-		elif os.path.isfile(path):
+		#if os.path.isdir(path):
+		#	if not self.path.endswith('/'):
+		#		self.send_response(301)
+		#		self.send_header("Location", self.path + '/')
+		#		self.end_headers()
+		#	else:
+		#		self.sendDirectoryListing(path, head)
+		#elif os.path.isfile(path):
+		if os.path.isfile(path):
 			if head:
 				(response, length) = self.getFileLength(path)
 				if length < 0:
@@ -345,10 +346,8 @@ class DirListingHandler(FileBaseHandler):
 				<head><title>404 Not Found</title></head>
 				<body>
 				<h1>Not Found</h1>
-				<p>The requestet URL %s was not found on this server</p>
-				<p><a href="/">Back to /</a>
 				</body>
-				</html>""" % self.escapeHTML(unquote(self.path))
+				</html>"""
 			self.send_header("Content-Length", str(len(errorMsg)))
 			self.send_header('Connection', 'close')
 			self.end_headers()
@@ -570,9 +569,13 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 	maxUploadSize = 0
 	blockSize = 1024 * 1024
 
+	useSSL = None
+	port = None
+	auth = None
+
 	def do_GET(self):
 		""" Answer every GET request with the upload form """
-		self.sendResponse(200, self.getUploadPage(".", 200))
+		self.sendResponse(200, self.getUploadPage("&nbsp", 200))
 
 	def do_POST(self):
 		""" Upload a file via POST
@@ -616,7 +619,13 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			target.write(fstorage["file"].file.read(bytesToRead))
 			bytesLeft -= bytesToRead
 		target.close()
-		self.sendResponse(200, self.getUploadPage("Upload completed: %s" % (fstorage["file"].filename), 200))
+
+		fname = fstorage["file"].filename
+		cleanFileName = fname.replace("/", "")
+		self.sendResponse(200, self.getUploadPage("Download link:<br>http%s://%s%s:%d/%s" %
+			(self.useSSL and "s" or "", self.auth, self.headers.get('Host').split(":")[0],
+			self.port + 1, cleanFileName), 200))
+
 		print("Received file '%s' from %s." % (destFileName, self.client_address[0]))
 
 	def do_PUT(self, fromPost=False):
@@ -1177,6 +1186,8 @@ class ServeFile():
 
 	def _confAndFindHandler(self):
 		handler = None
+		if self.port:
+			FilePutter.port = self.port
 		if self.serveMode == self.MODE_SINGLE:
 			try:
 				testit = open(self.target, 'r')
@@ -1220,6 +1231,7 @@ class ServeFile():
 		if self.auth:
 			# do authentication
 			AuthenticationHandler.authString = self.auth
+			FilePutter.auth = base64.b64decode(self.auth).decode() + "@"
 			if self.authrealm:
 				AuthenticationHandler.realm = self.authrealm
 			class AuthenticatedHandler(AuthenticationHandler, handler):
@@ -1227,6 +1239,7 @@ class ServeFile():
 			handler = AuthenticatedHandler
 
 		if self.useSSL:
+			FilePutter.useSSL = self.useSSL
 			# secure handler
 			@catchSSLErrors
 			class AlreadySecuredHandler(SecureHandler, handler):
