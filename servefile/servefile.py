@@ -77,8 +77,18 @@ class FileBaseHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.send_header('Content-Length', str(fileLength))
 		self.send_header('Connection', 'close')
 		self.send_header('Last-Modified', lastModified)
-		self.send_header('Content-Type', 'application/octet-stream')
-		self.send_header('Content-Disposition', 'attachment; filename="%s"' % fileName)
+
+		plain_text_type = ['.txt', '.diff', '.patch', '.c', '.cpp', '.h', '.sh', '.py',
+				'.md', 'json']
+		name, filetype = os.path.splitext(fileName)
+		print("filetype=%s" % (filetype))
+		if filetype in plain_text_type:
+			self.send_header('Content-Type', 'text/plain')
+			self.send_header('Content-Disposition', 'inline; filename="%s"' % fileName)
+		else:
+			self.send_header('Content-Type', 'application/octet-stream')
+			self.send_header('Content-Disposition', 'attachment; filename="%s"' % fileName)
+
 		self.send_header('Content-Transfer-Encoding', 'binary')
 
 	def isRangeRequest(self):
@@ -791,13 +801,10 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			background: #ddd;
 		}
 
-		.upload-container:before {
-			position: absolute;
-			bottom: 50px;
-			left: 230px;
-			content: " (or) Drag and Drop one file here. ";
+		.drag {
 			color: #3f8188;
 			font-weight: 900;
+			margin-left: 255px;
 		}
 
 		.upload-btn {
@@ -822,6 +829,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
         }
     </style>
 	<div class="top">
+        <span id="drag" class="drag">Drag and Drop file here</span>
 		<div class="upload-container">
 			<form id="form" action="/" method="post" enctype="multipart/form-data">
 				<input class="select_file" type="file" name="file" id="file" />
