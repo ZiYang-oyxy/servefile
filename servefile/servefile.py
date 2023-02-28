@@ -79,11 +79,14 @@ class FileBaseHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 		self.send_header('Last-Modified', lastModified)
 
 		plain_text_type = ['.txt', '.diff', '.patch', '.c', '.cpp', '.h', '.sh', '.py',
-				'.md', 'json']
+				'.md', '.json', '.log']
 		name, filetype = os.path.splitext(fileName)
 		print("filetype=%s" % (filetype))
 		if filetype in plain_text_type:
-			self.send_header('Content-Type', 'text/plain')
+			self.send_header('Content-Type', 'text/plain; charset=utf-8')
+			self.send_header('Content-Disposition', 'inline; filename="%s"' % fileName)
+		elif filetype == '.svg':
+			self.send_header('Content-Type', 'image/svg+xml')
 			self.send_header('Content-Disposition', 'inline; filename="%s"' % fileName)
 		else:
 			self.send_header('Content-Type', 'application/octet-stream')
