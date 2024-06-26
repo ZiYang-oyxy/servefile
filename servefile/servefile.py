@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Licensed under GNU General Public License v3 or later
@@ -22,6 +22,8 @@ import socket
 from subprocess import Popen, PIPE
 import sys
 import time
+
+g_server = "127.0.0.1"
 
 # fix imports for python2/python3
 try:
@@ -78,20 +80,31 @@ class FileBaseHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 		self.send_header('Connection', 'close')
 		self.send_header('Last-Modified', lastModified)
 
-		plain_text_type = ['.txt', '.diff', '.patch', '.c', '.cpp', '.h', '.sh', '.py',
-				'.md', '.json', '.log']
-		name, filetype = os.path.splitext(fileName)
-		print("filetype=%s" % (filetype))
-		if filetype in plain_text_type:
-			self.send_header('Content-Type', 'text/plain; charset=utf-8')
-			self.send_header('Content-Disposition', 'inline; filename="%s"' % fileName)
-		elif filetype == '.svg':
-			self.send_header('Content-Type', 'image/svg+xml')
-			self.send_header('Content-Disposition', 'inline; filename="%s"' % fileName)
-		else:
-			self.send_header('Content-Type', 'application/octet-stream')
-			self.send_header('Content-Disposition', 'attachment; filename="%s"' % fileName)
+		content_type_mapping = {
+			'.txt': 'text/plain; charset=utf-8',
+			'.diff': 'text/plain; charset=utf-8',
+			'.patch': 'text/plain; charset=utf-8',
+			'.c': 'text/plain; charset=utf-8',
+			'.cpp': 'text/plain; charset=utf-8',
+			'.h': 'text/plain; charset=utf-8',
+			'.sh': 'text/plain; charset=utf-8',
+			'.py': 'text/plain; charset=utf-8',
+			'.md': 'text/plain; charset=utf-8',
+			'.json': 'text/plain; charset=utf-8',
+			'.log': 'text/plain; charset=utf-8',
+			'.html': 'text/html; charset=utf-8',
+			'.jpg': 'image/jpeg',
+			'.jpeg': 'image/jpeg',
+			'.png': 'image/png',
+			'.gif': 'image/gif',
+			'.svg': 'image/svg+xml',
+		}
 
+		name, filetype = os.path.splitext(fileName)
+		content_type = content_type_mapping.get(filetype, 'application/octet-stream')
+
+		self.send_header('Content-Type', content_type)
+		self.send_header('Content-Disposition', f'inline; filename="{fileName}"')
 		self.send_header('Content-Transfer-Encoding', 'binary')
 
 	def isRangeRequest(self):
@@ -600,6 +613,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 		Files can be uploaded with wget --post-file=path/to/file <url> or
 		curl -X POST -d @file <url> .
 		"""
+		global g_server
 		length = self.getContentLength()
 		if length < 0:
 			return
@@ -636,7 +650,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 		fname = fstorage["file"].filename
 		cleanFileName = fname.replace("/", "")
 		self.sendResponse(200, self.getUploadPage("Download link:<br>http%s://%s%s:%d/%s" %
-			(self.useSSL and "s" or "", self.auth, self.headers.get('Host').split(":")[0],
+			(self.useSSL and "s" or "", self.auth, g_server,
 			self.port + 1, cleanFileName), 200))
 
 		print("Received file '%s' from %s." % (destFileName, self.client_address[0]))
@@ -807,7 +821,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 		.drag {
 			color: #3f8188;
 			font-weight: 900;
-			margin-left: 255px;
+			margin-left: 300px;
 		}
 
 		.upload-btn {
@@ -832,7 +846,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
         }
     </style>
 	<div class="top">
-        <span id="drag" class="drag">Drag and Drop file here</span>
+        <span id="drag" class="drag">Drop file here</span>
 		<div class="upload-container">
 			<form id="form" action="/" method="post" enctype="multipart/form-data">
 				<input class="select_file" type="file" name="file" id="file" />
@@ -840,7 +854,7 @@ class FilePutter(BaseHTTPServer.BaseHTTPRequestHandler):
 			</form>
 		</div>
 		<br>
-		<button id="submit" class="upload-btn" onclick="submit()">Submit</button>
+		<button id="submit" class="upload-btn" onclick="submit()">Upload</button>
 		<br>
 		<br>
         <span id="tip" style="color:""" + color + """;">""" + message + """</span>
@@ -1147,6 +1161,7 @@ class ServeFile():
 		return server
 
 	def serve(self):
+		global g_server
 		self.handler = self._confAndFindHandler()
 		self.server = []
 
@@ -1178,7 +1193,7 @@ class ServeFile():
 			for ip in ips:
 				if ":" in ip:
 					ip = "[%s]" % ip
-				print("\thttp%s://%s%s:%d/" % (self.useSSL and "s" or "", pwPart, ip, self.port))
+				print("\thttp%s://%s%s:%d/" % (self.useSSL and "s" or "", pwPart, g_server, self.port))
 		print()
 
 		try:

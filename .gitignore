@@ -5,3 +5,6 @@ __pycache__
 *.swp
 servefile.egg-info
 .tox
+@servefile_u.log@
+@servefile_d.log@
+ad_files
